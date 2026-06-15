@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="ko" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>역사 수행평가 점수 확인</title>
+  <!-- Tailwind CSS 로드 -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- Lucide 아이콘 로드 -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <style>
+    html, body { height: 100%; width: 100%; margin: 0; }
+    body { overflow: hidden; box-sizing: border-box; }
+    
+    /* 배경 디자인 */
+    .soft-grain {
+      background-image:
+        radial-gradient(circle at 12% 18%, rgba(255, 214, 165, 0.72) 0 12%, transparent 25%),
+        radial-gradient(circle at 86% 20%, rgba(255, 151, 112, 0.34) 0 10%, transparent 27%),
+        radial-gradient(circle at 72% 86%, rgba(120, 73, 54, 0.16) 0 13%, transparent 29%),
+        linear-gradient(135deg, #fff3df 0%, #ffe1c2 48%, #f8b88b 100%);
+    }
+    
+    /* 그림자 및 포커스 효과 */
+    .paper-card { box-shadow: 0 24px 70px rgba(113, 63, 38, 0.18); }
+    .warm-focus:focus { outline: 3px solid rgba(188, 93, 45, 0.35); outline-offset: 3px; }
+    
+    /* 애니메이션 */
+    .fade-in { animation: fadeIn 0.65s ease both; }
+    .rise-in { animation: riseIn 0.75s ease both; }
+    .delay-1 { animation-delay: 0.08s; }
+    .delay-2 { animation-delay: 0.16s; }
+    
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes riseIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* 드롭다운 화살표 커스텀 */
+    .score-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23bc5d2d' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+  </style>
+</head>
+<body class="h-full w-full font-sans">
+  <div id="appWrapper" class="soft-grain h-full w-full overflow-auto text-[#4a2b1d]">
+    
+    <!-- 상단 헤더 -->
+    <header class="w-full px-5 pt-6 md:px-10 md:pt-8">
+      <div class="mx-auto flex max-w-6xl items-center justify-between gap-4">
+        <div class="flex items-center gap-3 fade-in">
+          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#bc5d2d] text-[#fffaf2] shadow-lg shadow-orange-900/10">
+            <i data-lucide="landmark" aria-hidden="true"></i>
+          </div>
+          <div>
+            <p class="text-sm font-bold tracking-[0.18em] text-[#bc5d2d]">HISTORY CLASS</p>
+            <p class="text-xs text-[#7d4b34]">수행평가 점수 조회</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="toggleTeacherBtn" type="button" class="warm-focus rounded-full border border-[#e6b48a] bg-[#fffaf2]/80 px-4 py-2 text-sm font-bold text-[#7d4b34] transition hover:bg-[#fffaf2]"> 교사용 모드 </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="w-full px-5 pb-8 pt-6 md:px-10">
+      <section class="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+        
+        <!-- 좌측: 학생용 점수 조회 패널 -->
+        <article class="paper-card rise-in rounded-[2rem] border border-[#fff2df] bg-[#fffaf2]/90 p-6 md:p-8">
+          <div class="mb-7">
+            <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-[#ffe5ca] px-4 py-2 text-sm font-bold text-[#bc5d2d]">
+              <i data-lucide="sparkles" class="h-4 w-4" aria-hidden="true"></i> 역사 수행평가
+            </div>
+            <h1 class="mb-3 text-3xl font-black leading-tight text-[#4a2b1d] md:text-5xl">내 점수 확인하기</h1>
+            <p class="max-w-2xl text-base leading-relaxed text-[#7d4b34] md:text-lg">학번, 이름, 비밀번호를 입력하면 점수를 확인할 수 있어요.</p>
+          </div>
+
+          <!-- 로그인 폼 -->
+          <div id="lookupView" class="space-y-4">
+            <form id="lookupForm" class="space-y-4" autocomplete="off">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="lookupStudentId" class="mb-2 block text-sm font-extrabold text-[#4a2b1d]">학번</label> 
+                  <input id="lookupStudentId" type="text" inputmode="numeric" class="warm-focus w-full rounded-2xl border border-[#e6b48a] bg-white px-4 py-3 text-[#4a2b1d]" placeholder="예: 20315" required>
+                </div>
+                <div>
+                  <label for="lookupStudentName" class="mb-2 block text-sm font-extrabold text-[#4a2b1d]">이름</label> 
+                  <input id="lookupStudentName" type="text" class="warm-focus w-full rounded-2xl border border-[#e6b48a] bg-white px-4 py-3 text-[#4a2b1d]" placeholder="예: 김역사" required>
+                </div>
+              </div>
+              <div>
+                <label for="lookupPassword" class="mb-2 block text-sm font-extrabold text-[#4a2b1d]">비밀번호</label> 
+                <input id="lookupPassword" type="password" class="warm-focus w-full rounded-2xl border border-[#e6b48a] bg-white px-4 py-3 text-[#4a2b1d]" placeholder="학생 비밀번호 (초기: 0000)" required>
+              </div>
+              <button type="submit" class="warm-focus flex w-full items-center justify-center gap-2 rounded-2xl bg-[#bc5d2d] px-5 py-4 font-black text-[#fffaf2] transition hover:-translate-y-0.5 hover:bg-[#a84f24]"> 
+                <i data-lucide="search" class="h-5 w-5" aria-hidden="true"></i> 점수 조회
+              </button>
+            </form>
+          </div>
+
+          <!-- 결과 확인 패널 -->
+          <div id="resultPanel" class="mt-6 hidden rounded-[1.5rem] border border-[#e6b48a] bg-white p-5">
+            <div class="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p class="text-sm font-bold text-[#bc5d2d]">조회 완료</p>
+                <h2 id="resultName" class="mt-1 text-2xl font-black text-[#4a2b1d]">학생 이름</h2>
+                <p id="resultClass" class="mt-1 text-sm text-[#7d4b34]"></p>
+              </div>
+              <div class="rounded-2xl bg-[#ffe5ca] px-4 py-3 text-center min-w-[80px]">
+                <p class="text-xs font-bold text-[#7d4b34]">총점</p>
+                <p id="totalScore" class="text-2xl font-black text-[#bc5d2d]">0</p>
+              </div>
+            </div>
+            
+            <div id="scoreCardsContainer" class="grid gap-4 md:grid-cols-3">
+              <!-- 점수 카드가 자바스크립트에 의해 생성됩니다 -->
+            </div>
+            
+            <div class="mt-5 rounded-2xl bg-[#fffaf2] px-4 py-3 border border-[#ffe5ca]">
+              <p class="text-xs font-bold text-[#bc5d2d] mb-1">선생님의 코멘트</p>
+              <p id="resultMemo" class="text-sm leading-relaxed text-[#7d4b34]"></p>
+            </div>
+            
+            <button id="backBtn" class="mt-5 w-full rounded-xl bg-[#e6b48a]/30 border border-[#e6b48a] py-3 text-[#4a2b1d] font-bold transition hover:bg-[#ffe5ca]">다른 학생 조회하기</button>
+          </div>
+        </article>
+
+        <!-- 우측: 정보 및 교사용 패널 -->
+        <aside class="space-y-6">
+          <section class="paper-card rise-in delay-1 rounded-[2rem] border border-[#fff2df] bg-[#fffaf2]/80 p-6">
+            <h2 class="mb-4 flex items-center gap-2 text-xl font-black text-[#4a2b1d]"><i data-lucide="clipboard-list" class="h-5 w-5 text-[#bc5d2d]"></i> 학년별 평가 항목</h2>
+            <div class="space-y-4 text-sm text-[#7d4b34] bg-white p-4 rounded-xl border border-[#e6b48a]">
+              <div>
+                <p class="font-black text-[#bc5d2d] mb-1">📘 2학년</p>
+                <p>1. 인물 보고서 &nbsp; 2. 역사신문 &nbsp; 3. 포트폴리오</p>
+              </div>
+              <hr class="border-[#ffe5ca]">
+              <div>
+                <p class="font-black text-[#bc5d2d] mb-1">📗 3학년</p>
+                <p>1. 문화유산 홍보 &nbsp; 2. 드라마 기획 &nbsp; 3. 풍자화</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- 교사 관리 패널 (숨김 처리됨) -->
+          <section id="teacherPanel" class="paper-card rise-in delay-2 hidden rounded-[2rem] border border-[#fff2df] bg-[#fffaf2]/90 p-6">
+            
+            <!-- 교사 로그인 -->
+            <div id="teacherLoginView" class="mb-2">
+              <h2 class="mb-4 flex items-center gap-2 text-xl font-black text-[#4a2b1d]"><i data-lucide="lock" class="h-5 w-5 text-[#bc5d2d]"></i> 교사 인증</h2>
+              <form id="loginForm" class="space-y-4" autocomplete="off">
+                <input id="teacherPassword" type="password" class="warm-focus w-full rounded-xl border border-[#e6b48a] bg-white px-4 py-3" placeholder="비밀번호 입력 (기본: teacher123)" required>
+                <button type="submit" class="warm-focus w-full rounded-xl bg-[#bc5d2d] py-3 font-black text-[#fffaf2] transition hover:bg-[#a84f24]">관리자 모드 접속</button>
+              </form>
+            </div>
+
+            <!-- 교사 점수 입력 폼 -->
+            <div id="teacherContentView" class="hidden space-y-5">
+              <div class="flex justify-between items-center">
+                <h2 class="text-xl font-black text-[#4a2b1d]"><i data-lucide="pencil-line" class="inline-block h-5 w-5 text-[#bc5d2d]"></i> 점수 입력</h2>
+                <span id="recordCountBadge" class="text-xs bg-[#ffe5ca] text-[#bc5d2d] font-bold px-2 py-1 rounded-lg">저장: 0명</span>
+              </div>
+              
+              <form id="scoreForm" class="space-y-4 rounded-xl border border-[#e6b48a] bg-white p-4">
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <input id="studentId" type="text" class="warm-focus w-full rounded-lg border border-[#e6b48a] px-3 py-2 text-sm" placeholder="학번 (예: 20315)" required>
+                  <input id="studentName" type="text" class="warm-focus w-full rounded-lg border border-[#e6b48a] px-3 py-2 text-sm" placeholder="이름" required>
+                </div>
+                
+                <!-- JS에서 학년에 따라 항목이 동적 생성됨 -->
+                <div id="scoreInputsContainer" class="grid gap-3 sm:grid-cols-3">
+                  <p class="text-xs text-[#b88b74] col-span-3">학번을 입력하면 해당 학년의 평가 항목이 나타납니다.</p>
+                </div>
+                
+                <textarea id="memo" rows="2" class="warm-focus w-full rounded-lg border border-[#e6b48a] px-3 py-2 text-sm" placeholder="학생에게 남길 피드백이나 메모를 적어주세요."></textarea>
+                <button type="submit" class="w-full rounded-lg bg-[#4a2b1d] py-3 font-black text-[#fffaf2] transition hover:bg-[#3a2117]">데이터 저장하기</button>
+              </form>
+
+              <button id="logoutButton" class="w-full rounded-lg border border-[#e6b48a] py-2 text-[#7d4b34] font-bold bg-[#fffaf2] hover:bg-[#ffe5ca] transition">로그아웃</button>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <!-- 토스트 알림 메시지창 -->
+    <div id="toast" class="fixed bottom-5 left-1/2 z-50 max-w-[90%] -translate-x-1/2 translate-y-10 rounded-full bg-[#4a2b1d] px-5 py-3 text-sm font-bold text-[#fffaf2] opacity-0 shadow-2xl transition duration-300 pointer-events-none">
+      알림 메시지
+    </div>
+  </div>
+
+  <script>
+    // 1. 초기 세팅
+    lucide.createIcons(); // 아이콘 렌더링
+
+    // 학년별 수행평가 항목 정의
+    const assessmentNames = {
+      "2": ["인물 보고서", "역사신문", "학습지 포트폴리오"],
+      "3": ["문화유산 홍보하기", "드라마 기획안 만들기", "풍자화 만들기"]
+    };
+
+    // 데이터베이스 역할 (로컬 스토리지 사용)
+    let records = JSON.parse(localStorage.getItem("historyScores")) || [];
+
+    // 화면 하단 알림창(토스트) 띄우기 함수
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.remove("translate-y-10", "opacity-0");
+      setTimeout(() => toast.classList.add("translate-y-10", "opacity-0"), 3000);
+    }
+    
+    // 교사 패널 저장 인원 업데이트 함수
+    function updateRecordCount() {
+      const badge = document.getElementById("recordCountBadge");
+      if(badge) badge.textContent = `저장: ${records.length}명`;
+    }
+
+    // 2. 교사용 모드 동작 로직
+    document.getElementById("toggleTeacherBtn").addEventListener("click", () => {
+      document.getElementById("teacherPanel").classList.toggle("hidden");
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const pw = document.getElementById("teacherPassword").value;
+      if (pw === "teacher123") {
+        document.getElementById("teacherLoginView").classList.add("hidden");
+        document.getElementById("teacherContentView").classList.remove("hidden");
+        updateRecordCount();
+        showToast("교사 모드로 접속되었습니다.");
+      } else {
+        showToast("비밀번호가 틀렸습니다.");
+      }
+    });
+
+    document.getElementById("logoutButton").addEventListener("click", () => {
+      document.getElementById("teacherLoginView").classList.remove("hidden");
+      document.getElementById("teacherContentView").classList.add("hidden");
+      document.getElementById("teacherPassword").value = "";
+      showToast("로그아웃 되었습니다.");
+    });
+
+    // 교사 모드: 학번 입력 시 학년에 맞는 점수 입력창 동적 생성
+    const scoreInputsContainer = document.getElementById("scoreInputsContainer");
+    document.getElementById("studentId").addEventListener("input", (e) => {
+      const id = e.target.value;
+      if (id.length >= 1) {
+        const grade = id.charAt(0); // 학번 첫 글자로 2학년, 3학년 구분
+        if (assessmentNames[grade]) {
+          const items = assessmentNames[grade];
+          scoreInputsContainer.innerHTML = items.map((item, index) => `
+            <div>
+              <label class="mb-1 block text-xs font-bold text-[#bc5d2d]">${item}</label>
+              <input id="score${index + 1}" type="number" class="warm-focus w-full rounded-lg border border-[#e6b48a] px-3 py-2 text-sm" placeholder="점수" required>
+            </div>
+          `).join('');
+        } else {
+          scoreInputsContainer.innerHTML = `<p class="text-xs text-red-500 col-span-3 font-bold mt-2">※ 2학년 또는 3학년 학번으로 시작해야 합니다.</p>`;
+        }
+      } else {
+        scoreInputsContainer.innerHTML = `<p class="text-xs text-[#b88b74] col-span-3">학번을 입력하면 해당 학년의 평가 항목이 나타납니다.</p>`;
+      }
+    });
+
+    // 교사 모드: 점수 데이터 저장
+    document.getElementById("scoreForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const sId = document.getElementById("studentId").value;
+      const sName = document.getElementById("studentName").value;
+      const memo = document.getElementById("memo").value;
+      
+      const s1 = document.getElementById("score1") ? Number(document.getElementById("score1").value) : 0;
+      const s2 = document.getElementById("score2") ? Number(document.getElementById("score2").value) : 0;
+      const s3 = document.getElementById("score3") ? Number(document.getElementById("score3").value) : 0;
+
+      const existingIndex = records.findIndex(r => r.studentId === sId);
+      const studentData = {
+        studentId: sId,
+        studentName: sName,
+        password: "0000", // 모든 학생 초기 비밀번호
+        score1: s1,
+        score2: s2,
+        score3: s3,
+        memo: memo
+      };
+
+      if (existingIndex !== -1) {
+        records[existingIndex] = studentData; // 덮어쓰기
+      } else {
+        records.push(studentData); // 새 데이터 추가
+      }
+
+      localStorage.setItem("historyScores", JSON.stringify(records));
+      updateRecordCount();
+      showToast(`${sName} 학생의 점수가 안전하게 저장되었습니다.`);
+      e.target.reset();
+      scoreInputsContainer.innerHTML = `<p class="text-xs text-[#b88b74] col-span-3">학번을 입력하면 해당 학년의 평가 항목이 나타납니다.</p>`;
+    });
+
+    // 3. 학생 점수 조회 로직
+    const lookupForm = document.getElementById("lookupForm");
+    const lookupView = document.getElementById("lookupView");
+    const resultPanel = document.getElementById("resultPanel");
+
+    lookupForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const sId = document.getElementById("lookupStudentId").value;
+      const sName = document.getElementById("lookupStudentName").value;
+      const sPw = document.getElementById("lookupPassword").value;
+
+      // 기록에서 학생 찾기
+      const student = records.find(r => r.studentId === sId && r.studentName === sName);
+
+      if (!student) {
+        showToast("등록된 학생 정보가 없습니다. 학번과 이름을 확인해주세요.");
+        return;
+      }
+      if (student.password !== sPw) {
+        showToast("비밀번호가 일치하지 않습니다. (초기 비밀번호: 0000)");
+        return;
+      }
+
+      const grade = sId.charAt(0);
+      const items = assessmentNames[grade];
+
+      if (!items) {
+        showToast("데이터 오류: 올바른 학년 정보가 아닙니다.");
+        return;
+      }
+
+      // 조회 결과 화면 구성
+      document.getElementById("resultName").textContent = `${student.studentName} 학생`;
+      document.getElementById("resultClass").textContent = `${sId.substring(0,1)}학년 ${sId.substring(1,3)}반 ${sId.substring(3)}번`;
+      document.getElementById("totalScore").textContent = student.score1 + student.score2 + student.score3;
+      
+      const cardsContainer = document.getElementById("scoreCardsContainer");
+      const scores = [student.score1, student.score2, student.score3];
+      
+      cardsContainer.innerHTML = items.map((item, index) => `
+        <div class="rounded-xl border border-[#e6b48a] bg-[#fffaf2] p-4 text-center shadow-sm">
+          <p class="text-sm font-bold text-[#7d4b34] mb-2">${item}</p>
+          <p class="text-2xl font-black text-[#bc5d2d]">${scores[index]}<span class="text-sm text-[#7d4b34] font-normal ml-1">점</span></p>
+        </div>
+      `).join('');
+
+      document.getElementById("resultMemo").textContent = student.memo || "선택된 메모가 없습니다. 훌륭합니다!";
+
+      // 화면 전환
+      lookupView.classList.add("hidden");
+      resultPanel.classList.remove("hidden");
+    });
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      resultPanel.classList.add("hidden");
+      lookupView.classList.remove("hidden");
+      lookupForm.reset();
+    });
+
+  </script>
+</body>
+</html>
